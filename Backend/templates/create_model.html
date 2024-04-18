@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Création de modèle</h2>
+
+    {% if alert_message %}
+    <div class="alert alert-{{ alert_type }}" role="alert">
+        {{ alert_message }}
+    </div>
+    {% endif %}
+
+    <form action="{% url 'train_model' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Champ pour le nom du modèle -->
+        <div class="form-group">
+            <label for="model_name">Nom du modèle :</label>
+            <input type="text" class="form-control" id="model_name" name="model_name">
+        </div>
+    
+        <!-- Choisir un dataset -->
+        <div class="form-group">
+            <label for="dataset">Choisir un dataset :</label>
+            <select class="form-control" id="dataset" name="dataset">
+                {% for dataset in datasets %}
+                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Choisir les colonnes -->
+        <div class="form-group">
+            <label>Choisir les colonnes :</label>
+        </div>
+        <div class="form-group" id="columns">
+            <!-- Les colonnes seront ajoutées ici par JavaScript -->
+        </div>
+
+        <!-- Choisir un algorithme -->
+        <div class="form-group">
+            <label for="algorithm">Choisir un algorithme :</label>
+            <select class="form-control" id="algorithm" name="algorithm">
+                <option value="logistic_regression">Régression logistique</option>
+                <option value="random_forest">Random Forest</option>
+                <option value="decision_tree">Arbre de décision</option>
+                <option value="xgboost">XGBOOST</option>
+                <option value="igboost">IGBOOST</option>
+            </select>
+        </div>
+
+        <!-- Bouton pour entraîner le modèle -->
+        <button type="submit" class="btn btn-primary">Entraîner le modèle</button>
+    </form>
+</div>
+    
+<script>
+    document.getElementById('dataset').addEventListener('change', function() {
+        var datasetId = this.value;
+        var columnsDiv = document.getElementById('columns');
+        columnsDiv.innerHTML = ''; // Effacer les colonnes existantes
+
+        // Récupérer les colonnes pour le dataset sélectionné via une requête AJAX
+        fetch('/get_columns/' + datasetId)
+            .then(response => response.json())
+            .then(data => {
+                data.columns.forEach(column => {
+                    var checkboxDiv = document.createElement('div');
+                    checkboxDiv.classList.add('form-check');
+
+                    var checkbox = document.createElement('input');
+                    checkbox.classList.add('form-check-input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = column.id; // Utiliser la valeur de l'ID de la colonne comme valeur de la case à cocher
+                    checkbox.id = 'column_' + column.id;
+                    checkbox.name = 'columns';
+
+                    var label = document.createElement('label');
+                    label.classList.add('form-check-label');
+                    label.htmlFor = 'column_' + column.id;
+                    label.textContent = column.name;
+
+                    checkboxDiv.appendChild(checkbox);
+                    checkboxDiv.appendChild(label);
+                    columnsDiv.appendChild(checkboxDiv);
+                });
+            });
+    });
+
+    function trainModel() {
+        var datasetId = document.getElementById('dataset').value;
+        var algorithm = document.getElementById('algorithm').value;
+        var selectedColumns = Array.from(document.querySelectorAll('input[name="columns"]:checked')).map(function (checkbox) {
+            return checkbox.value;
+        });
+
+        // Envoi des données à la vue train_model via AJAX
+        var formData = new FormData();
+        formData.append('datasetId', datasetId);
+        formData.append('algorithm', algorithm);
+        selectedColumns.forEach(function(columnId) {
+            formData.append('columns', columnId);
+        });
+
+        fetch('/train_model/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Gérer la réponse de la vue train_model (par exemple, afficher un message de succès ou d'échec)
+            console.log(data);
+        });
+    }
+
+    // Ajouter des écouteurs d'événements pour détecter les changements dans la sélection du dataset, des colonnes et de l'algorithme
+    document.getElementById('dataset').addEventListener('change', trainModel);
+    document.getElementById('algorithm').addEventListener('change', trainModel);
+    document.querySelectorAll('input[name="columns"]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', trainModel);
+    });
+</script>    
+    
+{% endblock %}
