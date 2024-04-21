@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Résultat de la prédiction</h2>
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">Modèle utilisé : {{ model.name }}</h4>
+            <h5 class="card-subtitle mb-2 text-muted">Données d'entrée :</h5>
+            <ul class="list-group">
+                {% for key, value in input_data.items %}
+                <li class="list-group-item">{{ key }} : {{ value }}</li>
+                {% endfor %}
+            </ul>
+            <h5 class="card-subtitle mb-2 mt-4 text-muted">Résultat de la prédiction :</h5>
+            <p class="card-text">{{ prediction }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

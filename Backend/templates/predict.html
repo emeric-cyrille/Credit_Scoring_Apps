@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Effectuer une prédiction</h2>
+    <form action="{% url 'predict' %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="model_id">Sélectionner un modèle :</label>
+            <select class="form-control" id="model_id" name="model_id">
+                {% for model in trained_models %}
+                <option value="{{ model.id }}">{{ model.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <h3>Entrer les valeurs des colonnes sélectionnées :</h3>
+        {% for model in trained_models %}
+            {% if model.selectedcolumn_set.all %}
+                <h4>{{ model.name }}</h4>
+                <div class="form-group">
+                    {% for selected_column in model.selectedcolumn_set.all %}
+                    <label for="{{ selected_column.column.name }}">{{ selected_column.column.name }}</label>
+                    <input type="text" class="form-control" id="{{ selected_column.column.name }}" name="{{ selected_column.column.name }}">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Prédire</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Liste des modèles</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Modèles entraînés</h3>
+            <ul>
+                {% for model in trained_datasets %}
+                    <li><a href="{% url 'model_details' model.id %}">{{ model.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h3>Modèles non entraînés</h3>
+                <ul>
+                     {% for model in untrained_datasets %}
+                        <li>{{ model.name }}
+                            <form action="{% url 'train_model' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="model_id" value="{{ model.id }}">
+                                <button type="submit">Entraîner</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

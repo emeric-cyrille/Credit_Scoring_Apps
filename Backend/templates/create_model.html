@@ -10,7 +10,7 @@
     </div>
     {% endif %}
 
-    <form action="{% url 'train_model' %}" method="post" enctype="multipart/form-data">
+    <form action="{% url 'create_model' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <!-- Champ pour le nom du modèle -->
         <div class="form-group">
@@ -48,8 +48,8 @@
             </select>
         </div>
 
-        <!-- Bouton pour entraîner le modèle -->
-        <button type="submit" class="btn btn-primary">Entraîner le modèle</button>
+        <!-- Bouton pour enregistrer le modèle -->
+        <button type="submit" class="btn btn-primary">Enregistrer le modèle</button>
     </form>
 </div>
     
@@ -84,42 +84,6 @@
                     columnsDiv.appendChild(checkboxDiv);
                 });
             });
-    });
-
-    function trainModel() {
-        var datasetId = document.getElementById('dataset').value;
-        var algorithm = document.getElementById('algorithm').value;
-        var selectedColumns = Array.from(document.querySelectorAll('input[name="columns"]:checked')).map(function (checkbox) {
-            return checkbox.value;
-        });
-
-        // Envoi des données à la vue train_model via AJAX
-        var formData = new FormData();
-        formData.append('datasetId', datasetId);
-        formData.append('algorithm', algorithm);
-        selectedColumns.forEach(function(columnId) {
-            formData.append('columns', columnId);
-        });
-
-        fetch('/train_model/', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Gérer la réponse de la vue train_model (par exemple, afficher un message de succès ou d'échec)
-            console.log(data);
-        });
-    }
-
-    // Ajouter des écouteurs d'événements pour détecter les changements dans la sélection du dataset, des colonnes et de l'algorithme
-    document.getElementById('dataset').addEventListener('change', trainModel);
-    document.getElementById('algorithm').addEventListener('change', trainModel);
-    document.querySelectorAll('input[name="columns"]').forEach(function (checkbox) {
-        checkbox.addEventListener('change', trainModel);
     });
 </script>    
     

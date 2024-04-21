@@ -28,6 +28,7 @@ class Model(models.Model):
         ('untrained', 'Non entrainé')
     )
     status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='Non entrainé')
+    accuracy = models.FloatField(default=0)
     def __str__(self):
         return self.name
 

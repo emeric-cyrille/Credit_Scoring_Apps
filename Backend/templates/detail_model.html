@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Détails du modèle : {{ model.name }}</h2>
+
+    <ul>
+        <li>Nom du modèle : {{ model.name }}</li>
+        <li>Algorithme : {{ model.algorithm }}</li>
+        <li>Statut : {{ model.status }}</li>
+        <!-- Ajoutez d'autres détails du modèle selon vos besoins -->
+    </ul>
+</div>
+{% endblock %}
