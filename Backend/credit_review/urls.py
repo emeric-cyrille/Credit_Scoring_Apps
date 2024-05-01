@@ -12,5 +12,10 @@ urlpatterns = [
     path('model/<int:model_id>/', views.model_details, name='model_details'),
     path('train_model/', views.train_model, name='train_model'),
     path('predict/', views.predict, name='predict'),
+    path('get_selected_columns/<int:model_id>/', views.get_selected_columns, name='get_selected_columns'),
+    path('upload_dataset/', views.upload_dataset, name='upload_dataset'),
+    path('upload/', views.upload_dataset, name='upload_dataset'),
+    path('upload/success/', views.upload_success, name='upload_success'),
+
 
 ]

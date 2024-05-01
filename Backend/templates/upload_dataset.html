@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Upload de Dataset</h2>
+
+    <form action="{% url 'upload_dataset' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Champ pour le nom du dataset -->
+        <div class="form-group">
+            <label for="dataset_name">Nom du dataset :</label>
+            <input type="text" class="form-control" id="dataset_name" name="dataset_name">
+        </div>
+    
+        <!-- Champ pour la description -->
+        <div class="form-group">
+            <label for="description">Description :</label>
+            <textarea class="form-control" id="description" name="description"></textarea>
+        </div>
+
+        <!-- Champ pour le fichier de données -->
+        <div class="form-group">
+            <label for="data">Fichier de données :</label>
+            <input type="file" class="form-control-file" id="data" name="data">
+        </div>
+        
+        <!-- Champ pour l apercu de données -->
+        <div class="form-group">
+            <label for="data">Fichier de données :</label>
+            <input type="file" class="form-control-file" id="apercu" name="apercu">
+        </div>
+
+        <!-- Liste déroulante pour les colonnes -->
+        <div class="form-group">
+            <label for="target_column">Choisir la colonne cible :</label>
+            <select class="form-control" id="target_column" name="target_column">
+                <!-- Les colonnes seront ajoutées ici par JavaScript -->
+            </select>
+        </div>
+        <div>
+            <input type="hidden" id="columns" name="columns" value="">
+        </div>
+
+        <!-- Bouton pour enregistrer le dataset -->
+        <button type="submit" class="btn btn-primary">Enregistrer le dataset</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('data').addEventListener('change', function() {
+    var file = this.files[0];
+    var reader = new FileReader();
+
+    reader.onload = function(e) {
+    var data = e.target.result;
+    var lines = data.split('\n');
+    var columns = lines[0].split(',');
+
+    var select = document.getElementById('target_column');
+    select.innerHTML = ''; // Effacer les options existantes
+
+    columns.forEach(function(column) {
+        var option = document.createElement('option');
+        option.text = column;
+        option.value = column;
+        select.add(option);
+    });
+
+    // Mettre à jour le champ caché avec la liste des colonnes
+    document.getElementById('columns').value = JSON.stringify(columns);
+};
+
+
+
+    reader.readAsText(file);
+});
+</script>
+{% endblock %}

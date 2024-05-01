@@ -2,15 +2,19 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.urls import reverse
 
+from .forms import DatasetForm
+
 
 # Create your views here.
 
 def index(request):
     return render(request, 'index.html')
 
+
 def get_columns(request, dataset_id):
-    columns = Column.objects.filter(dataset_id=dataset_id).values('id', 'name')
+    columns = Column.objects.filter(dataset_id=dataset_id, status='input').values('id', 'name')
     return JsonResponse({'columns': list(columns)})
+
 
 
 from django.shortcuts import render
@@ -44,7 +48,8 @@ def save_model(request):
 
 
 def list_models(request):
-    trained_datasets = Model.objects.exclude(status='untrained').distinct()
+    #trained_datasets = Model.objects.filter(status='trained').distinct()
+    trained_datasets = Model.objects.filter(status='trained').distinct()
     untrained_datasets = Model.objects.filter(status='untrained').distinct()
     context = {
         'trained_datasets': trained_datasets,
@@ -91,14 +96,18 @@ def train_model(request):
             # Charger les informations du modèle depuis la base de données
             algorithm = model.algorithm
             dataset_path = model.dataset.data.path
-
+            print(algorithm)
+            print(dataset_path)
+            # Récupérer les colonnes sélectionnées associées au modèle
             # Récupérer les colonnes sélectionnées associées au modèle
             selected_columns = SelectedColumn.objects.filter(model=model)
             column_names = [sc.column.name for sc in selected_columns]
+            print(column_names)
 
             # Récupérer les noms de toutes les colonnes disponibles
             all_columns = Column.objects.filter(dataset=model.dataset)
             all_column_names = [col.name for col in all_columns]
+            print(all_column_names)
 
             # Vérifier si toutes les colonnes sélectionnées sont disponibles dans le dataset
             for col_name in column_names:
@@ -109,6 +118,10 @@ def train_model(request):
             target_column = [col.name for col in all_columns if col.status == 'target'][0]
             input_columns = [col for col in column_names if col != target_column]
 
+
+
+            print(target_column)
+            print(input_columns)
             # Charger le dataset et ne garder que les colonnes sélectionnées
             dataset = pd.read_csv(dataset_path)
             dataset = dataset[column_names]
@@ -117,11 +130,11 @@ def train_model(request):
             X_train, X_test, y_train, y_test = train_test_split(dataset[input_columns], dataset[target_column],
                                                                 test_size=0.2, random_state=42)
 
-
+            print(dataset)
             # Créer et entraîner le modèle en fonction de l'algorithme choisi
             if algorithm == 'logistic_regression':
                 model_algorithm = LogisticRegression()
-            elif algorithm == 'random_forest':
+            elif algorithm == 'randomforest':
                 model_algorithm = RandomForestClassifier()
             elif algorithm == 'decision_tree':
                 model_algorithm = DecisionTreeClassifier()
@@ -152,6 +165,19 @@ def train_model(request):
     else:
         # Retourner une réponse indiquant que la méthode HTTP n'est pas autorisée
         return render(request, 'error.html', {'message': "Méthode HTTP non autorisée"})
+
+
+
+def get_selected_columns(request, model_id):
+    try:
+        # Récupérer toutes les colonnes sélectionnées avec le statut "input" pour le modèle donné
+        selected_columns = SelectedColumn.objects.filter(model_id=model_id, column__status='input').values_list('column__name', flat=True)
+
+        # Retourner les colonnes sélectionnées sous forme de liste JSON
+        return JsonResponse({'selected_columns': list(selected_columns)})
+    except Exception as e:
+        # En cas d'erreur, retourner une réponse avec un message d'erreur
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 def predict(request):
@@ -193,3 +219,50 @@ def predict(request):
             'trained_models': trained_models
         }
         return render(request, 'predict.html', context)
+
+    from django.shortcuts import render, redirect
+    from .forms import DatasetForm
+
+
+
+
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from .models import Dataset, Column
+import csv
+from django.http import JsonResponse
+from .models import Column
+from io import TextIOWrapper
+import json
+
+def upload_dataset(request):
+    if request.method == 'POST':
+        # Récupérer les données du formulaire
+        dataset_name = request.POST.get('dataset_name')
+        description = request.POST.get('description')
+        target_column = request.POST.get('target_column')
+        data_file = request.FILES.get('data')
+        apercu = request.FILES.get('apercu')
+        columns = json.loads(request.POST.get('columns'))
+
+
+        print(target_column)
+        # Enregistrer le fichier de données dans la base de données
+        dataset = Dataset.objects.create(name=dataset_name, description=description, data=data_file, apercu=apercu)
+
+
+        print(columns)
+        # Enregistrer les colonnes dans la base de données
+        for column_name in columns:
+            status = 'target' if column_name == target_column else 'input'
+            column = Column.objects.create(dataset=dataset, name=column_name, status=status)
+            print(column)
+
+        # Rediriger vers une page de confirmation
+        return redirect(reverse('upload_success'))
+
+    return render(request, 'upload_dataset.html')
+
+
+def upload_success(request):
+    return render(request, 'upload_success.html')
