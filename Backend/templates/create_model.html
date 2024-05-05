@@ -52,7 +52,7 @@
         <button type="submit" class="btn btn-primary">Enregistrer le modèle</button>
     </form>
 </div>
-    
+<!--
 <script>
     document.getElementById('dataset').addEventListener('change', function() {
         var datasetId = this.value;
@@ -63,6 +63,20 @@
         fetch('/get_columns/' + datasetId)
             .then(response => response.json())
             .then(data => {
+                // Ajouter le bouton "Sélectionner tout"
+                var selectAllButton = document.createElement('button');
+                selectAllButton.type = 'button';
+                selectAllButton.classList.add('btn', 'btn-primary');
+                selectAllButton.textContent = 'Sélectionner tout';
+                selectAllButton.addEventListener('click', function() {
+                    var checkboxes = document.querySelectorAll('input[name="columns"]');
+                    checkboxes.forEach(function(checkbox) {
+                        checkbox.checked = true;
+                    });
+                });
+                columnsDiv.appendChild(selectAllButton);
+
+                // Ajouter les colonnes récupérées
                 data.columns.forEach(column => {
                     var checkboxDiv = document.createElement('div');
                     checkboxDiv.classList.add('form-check');
@@ -85,6 +99,66 @@
                 });
             });
     });
-</script>    
+</script>
+-->
+
+<script>
+    document.getElementById('dataset').addEventListener('change', function() {
+        var datasetId = this.value;
+        var columnsDiv = document.getElementById('columns');
+        columnsDiv.innerHTML = ''; // Effacer les colonnes existantes
+
+        // Récupérer les colonnes pour le dataset sélectionné via une requête AJAX
+        fetch('/get_columns/' + datasetId)
+            .then(response => response.json())
+            .then(data => {
+                // Ajouter le bouton "Sélectionner tout" comme une case à cocher
+                var selectAllCheckbox = document.createElement('input');
+                selectAllCheckbox.type = 'checkbox';
+                selectAllCheckbox.classList.add('form-check-input');
+                selectAllCheckbox.id = 'select-all-checkbox';
+                selectAllCheckbox.addEventListener('change', function() {
+                    var checkboxes = document.querySelectorAll('input[name="columns"]');
+                    checkboxes.forEach(function(checkbox) {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    });
+                });
+
+                var selectAllLabel = document.createElement('label');
+                selectAllLabel.classList.add('form-check-label');
+                selectAllLabel.htmlFor = 'select-all-checkbox';
+                selectAllLabel.textContent = 'Sélectionner toute les colonnes';
+
+                var selectAllDiv = document.createElement('div');
+                selectAllDiv.classList.add('form-check');
+                selectAllDiv.appendChild(selectAllCheckbox);
+                selectAllDiv.appendChild(selectAllLabel);
+                columnsDiv.appendChild(selectAllDiv);
+
+                // Ajouter les colonnes récupérées
+                data.columns.forEach(column => {
+                    var checkboxDiv = document.createElement('div');
+                    checkboxDiv.classList.add('form-check');
+
+                    var checkbox = document.createElement('input');
+                    checkbox.classList.add('form-check-input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = column.id; // Utiliser la valeur de l'ID de la colonne comme valeur de la case à cocher
+                    checkbox.id = 'column_' + column.id;
+                    checkbox.name = 'columns';
+
+                    var label = document.createElement('label');
+                    label.classList.add('form-check-label');
+                    label.htmlFor = 'column_' + column.id;
+                    label.textContent = column.name;
+
+                    checkboxDiv.appendChild(checkbox);
+                    checkboxDiv.appendChild(label);
+                    columnsDiv.appendChild(checkboxDiv);
+                });
+            });
+    });
+</script>
+
     
 {% endblock %}
