@@ -124,13 +124,12 @@ def train_model(request):
             print(input_columns)
             # Charger le dataset et ne garder que les colonnes sélectionnées
             dataset = pd.read_csv(dataset_path)
-            dataset = dataset[column_names]
-
+            print(dataset)
             # Diviser les données en ensembles d'entraînement et de test
-            X_train, X_test, y_train, y_test = train_test_split(dataset[input_columns], dataset[target_column],
+            X_train, X_test, y_train, y_test = train_test_split(dataset[input_columns], dataset[str(target_column)],
                                                                 test_size=0.2, random_state=42)
 
-            print(dataset)
+
             # Créer et entraîner le modèle en fonction de l'algorithme choisi
             if algorithm == 'logistic_regression':
                 model_algorithm = LogisticRegression()
@@ -146,7 +145,7 @@ def train_model(request):
             accuracy = accuracy_score(y_test, y_pred)
 
             # Sauvegarder le modèle entraîné dans un fichier pkl
-            model_data_dir = os.path.join('models')
+            model_data_dir = os.path.join('static/models')
             os.makedirs(model_data_dir, exist_ok=True)
             model_data_path = os.path.join(model_data_dir, '{}.pkl'.format(model.name))
             joblib.dump(model_algorithm, model_data_path)

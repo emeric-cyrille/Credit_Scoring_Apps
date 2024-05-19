@@ -8,7 +8,19 @@
         <li>Nom du modèle : {{ model.name }}</li>
         <li>Algorithme : {{ model.algorithm }}</li>
         <li>Statut : {{ model.status }}</li>
+        
+        
         <!-- Ajoutez d'autres détails du modèle selon vos besoins -->
     </ul>
+
+<div class="progress yellow" data-percentage="100">
+                                        <span class="progress-left">
+                                            <span class="progress-bar"></span>
+                                        </span>
+                                        <span class="progress-right">
+                                            <span class="progress-bar"></span>
+                                        </span>
+                                        <div class="progress-value"> {% if model.accuracy %} {{ model.accuracy }} % {% else %} 0  %{% endif %}</div>
+                                    </div>
 </div>
 {% endblock %}

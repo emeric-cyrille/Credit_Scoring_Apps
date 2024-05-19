@@ -1,9 +1,51 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    
+    
+    
+    
+<!-- HERO -->
+    <section id="hero" class="min-vh-100 d-flex align-items-center text-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h1 data-aos="fade-left" class="text-uppercase text-white fw-semibold display-1">Bienvenue sur CreditRiskAnalyser</h1>
+                    <h5 class="text-white mt-3 mb-4" data-aos="fade-right">Nous vous permettons de realiser le credit bancaire d'une tout autre facon</h5>
+                    <div data-aos="fade-up" data-aos-delay="50">
+                        <a href="#" class="btn btn-brand me-2">Creer son model</a>
+                        <a href="#" class="btn btn-light ms-2">Model exixtant</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
 <div class="container">
-    <p>Bienvenue Emeric</p>
-    <a href="{% url 'create_model' %}" class="btn btn-primary">Créer mon modèle</a>
-    <a href="{% url 'predict' %}" class="btn btn-primary">Prédire un credit</a>
+    <div class="row">
+        <div class="col-md-3 ">
+            dfguiop
+            <div class="card bg-info">
+                <div class="card-body">
+                    <a href="{% url 'create_model' %}" class="btn btn-primary">Créer mon modèle</a>
+                    <a href="{% url 'predict' %}" class="btn btn-primary ">Prédire un crédit</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <p>Bienvenue Emeric</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Add your results here -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
