@@ -1,6 +1,8 @@
-from django.shortcuts import render
-from django.http import JsonResponse
 from django.urls import reverse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from .forms import DatasetForm
 
@@ -9,12 +11,6 @@ from .forms import DatasetForm
 
 def index(request):
     return render(request, 'index.html')
-
-
-def get_columns(request, dataset_id):
-    columns = Column.objects.filter(dataset_id=dataset_id, status='input').values('id', 'name')
-    return JsonResponse({'columns': list(columns)})
-
 
 
 from django.shortcuts import render
@@ -219,12 +215,6 @@ def predict(request):
         }
         return render(request, 'predict.html', context)
 
-    from django.shortcuts import render, redirect
-    from .forms import DatasetForm
-
-
-
-
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from .models import Dataset, Column
@@ -265,3 +255,78 @@ def upload_dataset(request):
 
 def upload_success(request):
     return render(request, 'upload_success.html')
+
+
+from django.shortcuts import render, redirect
+from .models import Dataset
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.shortcuts import render, get_object_or_404
+from .models import Dataset
+from .feature_selection import run_feature_selection
+
+def feature_selection(request):
+    datasets = Dataset.objects.all()  # Récupérer tous les datasets de la base de données
+    if request.method == 'POST':
+        dataset_id = request.POST.get('dataset_select')
+        algorithm = request.POST.get('algorithm_select')
+        k = request.POST.get('k_select', 10)  # Valeur par défaut de 10 si k n'est pas fourni
+
+        # Rediriger vers la page des résultats avec les colonnes significatives
+        #return redirect(reverse('feature_selection_results') + f'?dataset={dataset_id}&algorithm={algorithm}&k={k}')
+        return redirect('feature_selection_results', dataset_id=dataset_id, algorithm=algorithm, k=k)
+
+    return render(request, 'feature_selection.html', {'datasets': datasets})
+
+from django.urls import reverse
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
+from .feature_selection import run_feature_selection
+
+def feature_selection_results(request):
+    if request.method == 'GET':
+        dataset_id = request.GET.get('dataset_select')
+        algorithm = request.GET.get('algorithm_select')
+        k = request.GET.get('k_select', None)
+
+        if not dataset_id or not algorithm:
+            messages.error(request, "Dataset and algorithm are required.")
+            return redirect(reverse('feature_selection'))
+
+        try:
+            dataset = get_object_or_404(Dataset, id=dataset_id)
+        except ValueError:
+            messages.error(request, "Invalid dataset ID.")
+            return redirect(reverse('feature_selection'))
+
+        try:
+            if k is not None:
+                k = int(k)
+        except ValueError:
+            messages.error(request, "Invalid value for k.")
+            return redirect(reverse('feature_selection'))
+
+        try:
+            significant_columns = run_feature_selection(dataset.id, algorithm, k)
+        except Exception as e:
+            messages.error(request, f"An error occurred during feature selection: {str(e)}")
+            return redirect(reverse('feature_selection'))
+
+        context = {
+            'dataset': dataset,
+            'algorithm': algorithm,
+            'k': k,
+            'significant_columns': significant_columns
+        }
+
+        return render(request, 'feature_selection_results.html', context)
+    else:
+        return redirect(reverse('feature_selection'))
+
+
+@csrf_exempt
+def get_columns(request, dataset_id):
+    columns = Column.objects.filter(dataset_id=dataset_id, status='input').values('id', 'name')
+    return JsonResponse({'columns': list(columns)})
+

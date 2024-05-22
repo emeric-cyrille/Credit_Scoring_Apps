@@ -17,8 +17,9 @@ class Model(models.Model):
         ('logistic_regression', 'Regression Logistique'),
         ('decision_tree', 'Arbre de décision'),
         ('xgboost', 'XGBOOST'),
-        ('svm', 'SVM'),
-        ('igboost', 'IGBOOST')
+        ('sfs', 'SFS'),
+        ('lasso', 'LASSO'),
+        ('relief', 'Relief')
     )
     algorithm = models.CharField(max_length=100, choices=ALGO_CHOICES, default='Regression Logistique')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)

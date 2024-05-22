@@ -10,14 +10,14 @@
     </div>
     {% endif %}
 
-    <form action="{% url 'create_model' %}" method="post" enctype="multipart/form-data">
+    <form id="mainForm" method="post" action="{% url 'create_model' %}" enctype="multipart/form-data">
         {% csrf_token %}
         <!-- Champ pour le nom du modèle -->
         <div class="form-group">
             <label for="model_name">Nom du modèle :</label>
             <input type="text" class="form-control" id="model_name" name="model_name">
         </div>
-    
+
         <!-- Choisir un dataset -->
         <div class="form-group">
             <label for="dataset">Choisir un dataset :</label>
@@ -28,12 +28,24 @@
             </select>
         </div>
 
-        <!-- Choisir les colonnes -->
+        <!-- Choisir une action -->
         <div class="form-group">
-            <label>Choisir les colonnes :</label>
+            <label for="selection">Choisir une action :</label>
+            <select class="form-control" id="selection" name="selection">
+                <option value="manual_selection">Sélection manuelle des attributs</option>
+                <option value="feature_selection">Utiliser un algorithme de sélection d'attributs</option>
+            </select>
         </div>
-        <div class="form-group" id="columns">
-            <!-- Les colonnes seront ajoutées ici par JavaScript -->
+
+        <!-- Div pour sélectionner manuellement les colonnes -->
+        <div id="manual_selection_div" style="display: none;">
+            <!-- Choisir les colonnes -->
+            <div class="form-group">
+                <label>Choisir les colonnes :</label>
+            </div>
+            <div class="form-group" id="columns">
+                <!-- Les colonnes seront ajoutées ici par JavaScript -->
+            </div>
         </div>
 
         <!-- Choisir un algorithme -->
@@ -41,10 +53,8 @@
             <label for="algorithm">Choisir un algorithme :</label>
             <select class="form-control" id="algorithm" name="algorithm">
                 <option value="logistic_regression">Régression logistique</option>
-                <option value="randomforest">Random Forest</option>
+                <option value="random_forest">Random Forest</option>
                 <option value="decision_tree">Arbre de décision</option>
-                <option value="xgboost">XGBOOST</option>
-                <option value="igboost">IGBOOST</option>
             </select>
         </div>
 
@@ -52,39 +62,103 @@
         <button type="submit" class="btn btn-primary">Enregistrer le modèle</button>
     </form>
 </div>
-    
+
 <script>
+    document.getElementById('selection').addEventListener('change', function() {
+        var selectionValue = this.value;
+        var manualSelectionDiv = document.getElementById('manual_selection_div');
+
+        if (selectionValue === 'manual_selection') {
+            manualSelectionDiv.style.display = 'block';
+        } else {
+            manualSelectionDiv.style.display = 'none';
+        }
+
+        if (selectionValue === 'feature_selection') {
+            // Sauvegarder les données dans localStorage
+            localStorage.setItem('model_name', document.getElementById('model_name').value);
+            localStorage.setItem('dataset', document.getElementById('dataset').value);
+            localStorage.setItem('algorithm', document.getElementById('algorithm').value);
+            window.location.href = '/feature_selection';
+        }
+    });
+
     document.getElementById('dataset').addEventListener('change', function() {
         var datasetId = this.value;
+        var manualSelectionDiv = document.getElementById('manual_selection_div');
         var columnsDiv = document.getElementById('columns');
-        columnsDiv.innerHTML = ''; // Effacer les colonnes existantes
 
-        // Récupérer les colonnes pour le dataset sélectionné via une requête AJAX
-        fetch('/get_columns/' + datasetId)
-            .then(response => response.json())
-            .then(data => {
-                data.columns.forEach(column => {
-                    var checkboxDiv = document.createElement('div');
-                    checkboxDiv.classList.add('form-check');
+        if (document.getElementById('selection').value === 'manual_selection') {
+            // Afficher le div pour la sélection manuelle des attributs
+            manualSelectionDiv.style.display = 'block';
 
-                    var checkbox = document.createElement('input');
-                    checkbox.classList.add('form-check-input');
-                    checkbox.type = 'checkbox';
-                    checkbox.value = column.id; // Utiliser la valeur de l'ID de la colonne comme valeur de la case à cocher
-                    checkbox.id = 'column_' + column.id;
-                    checkbox.name = 'columns';
+            // Récupérer les colonnes pour le dataset sélectionné via une requête AJAX
+            fetch('/get_columns/' + datasetId)
+                .then(response => response.json())
+                .then(data => {
+                    // Effacer les colonnes existantes
+                    columnsDiv.innerHTML = '';
 
-                    var label = document.createElement('label');
-                    label.classList.add('form-check-label');
-                    label.htmlFor = 'column_' + column.id;
-                    label.textContent = column.name;
+                    // Ajouter le bouton "Sélectionner tout" comme une case à cocher
+                    var selectAllCheckbox = document.createElement('input');
+                    selectAllCheckbox.type = 'checkbox';
+                    selectAllCheckbox.classList.add('form-check-input');
+                    selectAllCheckbox.id = 'select-all-checkbox';
+                    selectAllCheckbox.addEventListener('change', function() {
+                        var checkboxes = document.querySelectorAll('input[name="columns"]');
+                        checkboxes.forEach(function(checkbox) {
+                            checkbox.checked = selectAllCheckbox.checked;
+                        });
+                    });
 
-                    checkboxDiv.appendChild(checkbox);
-                    checkboxDiv.appendChild(label);
-                    columnsDiv.appendChild(checkboxDiv);
+                    var selectAllLabel = document.createElement('label');
+                    selectAllLabel.classList.add('form-check-label');
+                    selectAllLabel.htmlFor = 'select-all-checkbox';
+                    selectAllLabel.textContent = 'Sélectionner toute les colonnes';
+
+                    var selectAllDiv = document.createElement('div');
+                    selectAllDiv.classList.add('form-check');
+                    selectAllDiv.appendChild(selectAllCheckbox);
+                    selectAllDiv.appendChild(selectAllLabel);
+                    columnsDiv.appendChild(selectAllDiv);
+
+                    // Ajouter les colonnes récupérées
+                    data.columns.forEach(column => {
+                        var checkboxDiv = document.createElement('div');
+                        checkboxDiv.classList.add('form-check');
+
+                        var checkbox = document.createElement('input');
+                        checkbox.classList.add('form-check-input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = column.id; // Utiliser la valeur de l'ID de la colonne comme valeur de la case à cocher
+                        checkbox.id = 'column_' + column.id;
+                        checkbox.name = 'columns';
+
+                        var label = document.createElement('label');
+                        label.classList.add('form-check-label');
+                        label.htmlFor = 'column_' + column.id;
+                        label.textContent = column.name;
+
+                        checkboxDiv.appendChild(checkbox);
+                        checkboxDiv.appendChild(label);
+                        columnsDiv.appendChild(checkboxDiv);
+                    });
                 });
-            });
+        }
     });
-</script>    
-    
+
+    // Charger les données à partir de localStorage si elles existent
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('model_name')) {
+            document.getElementById('model_name').value = localStorage.getItem('model_name');
+        }
+        if (localStorage.getItem('dataset')) {
+            document.getElementById('dataset').value = localStorage.getItem('dataset');
+        }
+        if (localStorage.getItem('algorithm')) {
+            document.getElementById('algorithm').value = localStorage.getItem('algorithm');
+        }
+    });
+</script>
+
 {% endblock %}

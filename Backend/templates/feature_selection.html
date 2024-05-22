@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Sélection d'attributs</h2>
+
+    {% if alert_message %}
+    <div class="alert alert-{{ alert_type }}" role="alert">
+        {{ alert_message }}
+    </div>
+    {% endif %}
+
+    <form id="featureSelectionForm" method='POST' action="{% url 'feature_selection_results' %}">
+        {% csrf_token %}
+        <input type="hidden" id="dataset_hidden" name="dataset_select" value="">
+        <input type="hidden" id="algorithm_hidden" name="algorithm_select" value="">
+        <input type="hidden" id="k_hidden" name="k_select" value="">
+
+        <!-- Choisir un dataset -->
+        <div class="form-group">
+            <label for="dataset">Choisir un dataset :</label>
+            <select class="form-control" id="dataset" name="dataset_select">
+                {% for dataset in datasets %}
+                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Choisir un algorithme -->
+        <div class="form-group">
+            <label for="algorithm">Choisir un algorithme de sélection d'attributs :</label>
+            <select class="form-control" id="algorithm" name="algorithm_select">
+                <option value="xgboost">XGBoost</option>
+                <option value="sfs">Sequential Feature Selector (SFS)</option>
+                <option value="lasso">LASSO</option>
+                <option value="relief">Relief</option>
+            </select>
+        </div>
+
+        <!-- Champ conditionnel pour le nombre de caractéristiques -->
+        <div class="form-group" id="k_div" style="display: none;">
+            <label for="k">Nombre de caractéristiques (seulement pour SFS et LASSO) :</label>
+            <input type="number" class="form-control" id="k" name="k_select" value="10">
+        </div>
+
+        <!-- Bouton pour soumettre le formulaire -->
+        <button type="submit" class="btn btn-primary">Lancer l'algorithme</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('featureSelectionForm').addEventListener('submit', function() {
+        document.getElementById('dataset_hidden').value = document.getElementById('dataset').value;
+        document.getElementById('algorithm_hidden').value = document.getElementById('algorithm').value;
+        document.getElementById('k_hidden').value = document.getElementById('k').value;
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('dataset')) {
+            document.getElementById('dataset').value = localStorage.getItem('dataset');
+        }
+        if (localStorage.getItem('algorithm')) {
+            document.getElementById('algorithm').value = localStorage.getItem('algorithm');
+            toggleKField(localStorage.getItem('algorithm'));
+        }
+
+        document.getElementById('dataset').addEventListener('change', function() {
+            localStorage.setItem('dataset', this.value);
+        });
+        document.getElementById('algorithm').addEventListener('change', function() {
+            localStorage.setItem('algorithm', this.value);
+            toggleKField(this.value);
+        });
+
+        function toggleKField(algorithm) {
+            var kDiv = document.getElementById('k_div');
+            if (algorithm === 'sfs' || algorithm === 'lasso') {
+                kDiv.style.display = 'block';
+            } else {
+                kDiv.style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

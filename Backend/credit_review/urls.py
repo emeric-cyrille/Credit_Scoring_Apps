@@ -16,6 +16,9 @@ urlpatterns = [
     path('upload_dataset/', views.upload_dataset, name='upload_dataset'),
     path('upload/', views.upload_dataset, name='upload_dataset'),
     path('upload/success/', views.upload_success, name='upload_success'),
+    path('feature_selection/', views.feature_selection, name='feature_selection'),
+    path('feature_selection_results/', views.feature_selection_results, name='feature_selection_results'),
 
 
 ]
+

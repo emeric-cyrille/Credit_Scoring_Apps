@@ -1,3 +1,6 @@
 Django~=5.0.4
 Pillow
 pandas
+xgboost
+mlxtend
+ReliefF

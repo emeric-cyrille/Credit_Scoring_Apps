@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Résultats de la sélection d'attributs</h2>
+
+    <p><strong>Dataset :</strong> {{ dataset.name }}</p>
+    <p><strong>Algorithme :</strong> {{ algorithm }}</p>
+    {% if algorithm in ['sfs', 'lasso'] %}
+        <p><strong>Nombre de caractéristiques :</strong> {{ k }}</p>
+    {% endif %}
+
+    <h3>Colonnes les plus significatives</h3>
+    <ul>
+        {% for column in significant_columns %}
+            <li>{{ column }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'feature_selection' %}" class="btn btn-primary">Retour</a>
+</div>
+{% endblock %}
