@@ -10,13 +10,16 @@
     </div>
     {% endif %}
 
-    <form id="featureSelectionForm" method="post" action="{% url 'feature_selection' %}">
+    <form id="featureSelectionForm" method='POST' action="{% url 'feature_selection_results' %}">
         {% csrf_token %}
+        <input type="hidden" id="dataset_hidden" name="dataset_select" value="">
+        <input type="hidden" id="algorithm_hidden" name="algorithm_select" value="">
+        <input type="hidden" id="k_hidden" name="k_select" value="">
 
         <!-- Choisir un dataset -->
         <div class="form-group">
             <label for="dataset">Choisir un dataset :</label>
-            <select class="form-control" id="dataset" name="dataset">
+            <select class="form-control" id="dataset" name="dataset_select">
                 {% for dataset in datasets %}
                     <option value="{{ dataset.id }}">{{ dataset.name }}</option>
                 {% endfor %}
@@ -26,7 +29,7 @@
         <!-- Choisir un algorithme -->
         <div class="form-group">
             <label for="algorithm">Choisir un algorithme de sélection d'attributs :</label>
-            <select class="form-control" id="algorithm" name="algorithm">
+            <select class="form-control" id="algorithm" name="algorithm_select">
                 <option value="xgboost">XGBoost</option>
                 <option value="sfs">Sequential Feature Selector (SFS)</option>
                 <option value="lasso">LASSO</option>
@@ -37,17 +40,21 @@
         <!-- Champ conditionnel pour le nombre de caractéristiques -->
         <div class="form-group" id="k_div" style="display: none;">
             <label for="k">Nombre de caractéristiques (seulement pour SFS et LASSO) :</label>
-            <input type="number" class="form-control" id="k" name="k" value="10">
+            <input type="number" class="form-control" id="k" name="k_select" value="10">
         </div>
 
         <!-- Bouton pour soumettre le formulaire -->
         <button type="submit" class="btn btn-primary">Lancer l'algorithme</button>
-
     </form>
-    <a href="{% url 'create_model' %}" class="btn btn-primary">Retour</a>
 </div>
 
 <script>
+    document.getElementById('featureSelectionForm').addEventListener('submit', function() {
+        document.getElementById('dataset_hidden').value = document.getElementById('dataset').value;
+        document.getElementById('algorithm_hidden').value = document.getElementById('algorithm').value;
+        document.getElementById('k_hidden').value = document.getElementById('k').value;
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         if (localStorage.getItem('dataset')) {
             document.getElementById('dataset').value = localStorage.getItem('dataset');

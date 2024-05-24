@@ -1,11 +1,11 @@
-
 from django.db import models
 
 class Dataset(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(default='Mettre la description ici')
-    data = models.FileField(upload_to='static/datasets/')
-    apercu = models.ImageField(upload_to='static/dataset_previews/', blank=True, null=True)
+    data = models.FileField(upload_to='datasets/')
+    apercu = models.ImageField(upload_to='dataset_previews/', blank=True, null=True)
+    #target_column = models.CharField(max_length=100)  # Ajoutez ce champ si nécessaire
 
     def __str__(self):
         return self.name

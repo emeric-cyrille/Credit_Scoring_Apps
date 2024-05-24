@@ -265,30 +265,30 @@ import json
 from django.shortcuts import render, get_object_or_404
 from .models import Dataset
 from .feature_selection import run_feature_selection
-
 def feature_selection(request):
     datasets = Dataset.objects.all()  # Récupérer tous les datasets de la base de données
     if request.method == 'POST':
-        dataset_id = request.POST.get('dataset_select')
-        algorithm = request.POST.get('algorithm_select')
-        k = request.POST.get('k_select', 10)  # Valeur par défaut de 10 si k n'est pas fourni
+        dataset_id = request.POST.get('dataset')
+        algorithm = request.POST.get('algorithm')
+        k = request.POST.get('k', 10)  # Valeur par défaut de 10 si k n'est pas fourni
 
         # Rediriger vers la page des résultats avec les colonnes significatives
-        #return redirect(reverse('feature_selection_results') + f'?dataset={dataset_id}&algorithm={algorithm}&k={k}')
-        return redirect('feature_selection_results', dataset_id=dataset_id, algorithm=algorithm, k=k)
+        return redirect(reverse('feature_selection_results') + f'?dataset={dataset_id}&algorithm={algorithm}&k={k}')
 
     return render(request, 'feature_selection.html', {'datasets': datasets})
 
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib import messages
-from django.shortcuts import render, get_object_or_404, redirect
+from .models import Dataset  # Assurez-vous que ce modèle est bien importé
 from .feature_selection import run_feature_selection
 
 def feature_selection_results(request):
     if request.method == 'GET':
-        dataset_id = request.GET.get('dataset_select')
-        algorithm = request.GET.get('algorithm_select')
-        k = request.GET.get('k_select', None)
+        dataset_id = request.GET.get('dataset')
+        algorithm = request.GET.get('algorithm')
+        k = request.GET.get('k', None)
 
         if not dataset_id or not algorithm:
             messages.error(request, "Dataset and algorithm are required.")

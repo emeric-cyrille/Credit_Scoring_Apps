@@ -6,16 +6,14 @@
 
     <p><strong>Dataset :</strong> {{ dataset.name }}</p>
     <p><strong>Algorithme :</strong> {{ algorithm }}</p>
-    {% if algorithm in ['sfs', 'lasso'] %}
+    {% if algorithm == 'sfs' or algorithm == 'lasso' %}
         <p><strong>Nombre de caractéristiques :</strong> {{ k }}</p>
     {% endif %}
 
-    <h3>Colonnes les plus significatives</h3>
-    <ul>
-        {% for column in significant_columns %}
-            <li>{{ column }}</li>
-        {% endfor %}
-    </ul>
+    <h3>Colonnes les plus significatives:</h3>
+    {% for column, percentage in significant_columns %}
+        <li>{{ column }}: {{ percentage }}%</li>
+    {% endfor %}
 
     <a href="{% url 'feature_selection' %}" class="btn btn-primary">Retour</a>
 </div>
