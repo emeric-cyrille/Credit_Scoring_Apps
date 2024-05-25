@@ -41,8 +41,6 @@ def save_model(request):
 
     return render(request, 'create_model.html', {'datasets': Dataset.objects.all()})
 
-
-
 def list_models(request):
     #trained_datasets = Model.objects.filter(status='trained').distinct()
     trained_datasets = Model.objects.filter(status='trained').distinct()
@@ -56,7 +54,6 @@ def list_models(request):
 
 
 from django.shortcuts import render, get_object_or_404
-from .models import Model
 
 def model_details(request, model_id):
     model = get_object_or_404(Model, pk=model_id)
@@ -66,10 +63,6 @@ def model_details(request, model_id):
 
 
 
-
-
-from django.shortcuts import render, redirect
-from django.urls import reverse
 from .models import Model, SelectedColumn, Column
 import pandas as pd
 import os
@@ -262,67 +255,261 @@ from .models import Dataset
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from django.shortcuts import render, get_object_or_404
-from .models import Dataset
+
+from .models import Dataset, Column
+
+
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from .models import Dataset, Column
 from .feature_selection import run_feature_selection
+
 def feature_selection(request):
     datasets = Dataset.objects.all()  # Récupérer tous les datasets de la base de données
+    datasets_info = []
+
+    for dataset in datasets:
+        columns = Column.objects.filter(dataset=dataset)
+        non_target_columns = columns.exclude(status='target').count()
+        datasets_info.append({'id': dataset.id, 'name': dataset.name, 'num_columns': non_target_columns})
+
     if request.method == 'POST':
         dataset_id = request.POST.get('dataset')
         algorithm = request.POST.get('algorithm')
-        k = request.POST.get('k', 10)  # Valeur par défaut de 10 si k n'est pas fourni
+        k = int(request.POST.get('k', 10))  # Valeur par défaut de 10 si k n'est pas fourni
+        num_features = int(request.POST.get('num_features', 10))  # Valeur par défaut de 10 si num_features n'est pas fourni
+
+        # Lancer l'algorithme de sélection d'attributs
+        selected_features = run_feature_selection(dataset_id, algorithm, k, num_features)
 
         # Rediriger vers la page des résultats avec les colonnes significatives
-        return redirect(reverse('feature_selection_results') + f'?dataset={dataset_id}&algorithm={algorithm}&k={k}')
+        return redirect(reverse('feature_selection_results') + f'?dataset={dataset_id}&algorithm={algorithm}&k={k}&num_features={num_features}')
 
-    return render(request, 'feature_selection.html', {'datasets': datasets})
+    return render(request, 'feature_selection.html', {'datasets': datasets, 'datasets_info': datasets_info})
 
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
-from django.contrib import messages
-from .models import Dataset  # Assurez-vous que ce modèle est bien importé
 from .feature_selection import run_feature_selection
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from .models import Dataset, Model
 
+"""
 def feature_selection_results(request):
-    if request.method == 'GET':
-        dataset_id = request.GET.get('dataset')
-        algorithm = request.GET.get('algorithm')
-        k = request.GET.get('k', None)
+    if request.method == 'POST':
+        selected_columns = request.POST.getlist('selected_columns')
+        dataset_id = request.POST.get('dataset_id')
+        model_name = request.POST.get('model_name')
 
-        if not dataset_id or not algorithm:
-            messages.error(request, "Dataset and algorithm are required.")
-            return redirect(reverse('feature_selection'))
-
-        try:
-            dataset = get_object_or_404(Dataset, id=dataset_id)
-        except ValueError:
-            messages.error(request, "Invalid dataset ID.")
-            return redirect(reverse('feature_selection'))
-
-        try:
-            if k is not None:
-                k = int(k)
-        except ValueError:
-            messages.error(request, "Invalid value for k.")
-            return redirect(reverse('feature_selection'))
-
-        try:
-            significant_columns = run_feature_selection(dataset.id, algorithm, k)
-        except Exception as e:
-            messages.error(request, f"An error occurred during feature selection: {str(e)}")
-            return redirect(reverse('feature_selection'))
-
-        context = {
-            'dataset': dataset,
-            'algorithm': algorithm,
-            'k': k,
-            'significant_columns': significant_columns
+        # Rediriger vers la vue de création de modèle avec les colonnes sélectionnées
+        query_params = {
+            'selected_columns': selected_columns,
+            'dataset': dataset_id,
+            'model_name': model_name,
+            'action': 'feature_selection'
         }
+        return redirect(reverse('create_model_algo') + '?' + urlencode(query_params))
 
-        return render(request, 'feature_selection_results.html', context)
+
+    dataset_id = request.GET.get('dataset')
+    algorithm = request.GET.get('algorithm')
+    k = int(request.GET.get('k', 10))
+    num_features = int(request.GET.get('num_features', 10))
+
+    try:
+        dataset = Dataset.objects.get(id=dataset_id)
+    except Dataset.DoesNotExist:
+        return render(request, 'feature_selection_results.html', {'error_message': 'Dataset not found.'})
+
+    selected_features = run_feature_selection(dataset_id, algorithm, k, num_features)
+
+    # Récupérer le nom du modèle précédemment choisi, si disponible
+    model_name = request.session.get('model_name', 'Unknown Model')
+
+
+    # Créer l'URL de retour avec les informations nécessaires
+    return_url = reverse('create_model_algo') + f'?dataset={dataset_id}&model_name={model_name}'
+
+    return render(request, 'feature_selection_results.html', {
+        'dataset': dataset,
+        'algorithm': algorithm,
+        'selected_features': selected_features,
+        'num_features': num_features,
+        'return_url': return_url
+    })
+"""
+def feature_selection_results(request):
+    if request.method == 'POST':
+        selected_columns = request.POST.getlist('selected_columns')
+        dataset_id = request.POST.get('dataset_id')
+        model_name = request.POST.get('model_name')
+
+        # Rediriger vers la vue de création de modèle avec les colonnes sélectionnées
+        query_params = {
+            'selected_columns': selected_columns,
+            'dataset': dataset_id,
+            'model_name': model_name,
+            'action': 'feature_selection'
+        }
+        return redirect(reverse('create_model_algo') + '?' + urlencode(query_params))
+
+    dataset_id = request.GET.get('dataset')
+    algorithm = request.GET.get('algorithm')
+    k = int(request.GET.get('k', 10))
+    num_features = int(request.GET.get('num_features', 10))
+
+    try:
+        dataset = Dataset.objects.get(id=dataset_id)
+    except Dataset.DoesNotExist:
+        return render(request, 'feature_selection_results.html', {'error_message': 'Dataset not found.'})
+
+    # Récupérer les identifiants des colonnes sélectionnées au lieu des noms de colonnes
+    selected_columns = request.GET.getlist('selected_columns')
+
+    selected_features = run_feature_selection(dataset_id, algorithm, k, num_features)
+
+    # Récupérer le nom du modèle précédemment choisi, si disponible
+    model_name = request.session.get('model_name', 'Unknown Model')
+
+    # Créer l'URL de retour avec les informations nécessaires
+    return_url = reverse('create_model_algo') + f'?dataset={dataset_id}&model_name={model_name}'
+
+    return render(request, 'feature_selection_results.html', {
+        'dataset': dataset,
+        'algorithm': algorithm,
+        'selected_features': selected_features,
+        'num_features': num_features,
+        'return_url': return_url
+    })
+
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Dataset, Column, Model
+
+"""
+def create_model_algo(request):
+    if request.method == 'POST':
+        model_name = request.POST.get('model_name')
+        dataset_id = request.POST.get('dataset')
+        algorithm = request.POST.get('algorithm')
+        selected_columns = request.POST.getlist('columns')
+
+        # Enregistrer le modèle
+        model = Model.objects.create(name=model_name, algorithm=algorithm, dataset_id=dataset_id)
+
+        # Enregistrer les colonnes sélectionnées pour ce modèle avec le statut "input"
+        for column_id in selected_columns:
+            column = Column.objects.get(id=column_id)
+            column.status = 'input'
+            column.save()
+            model.columns.add(column)
+
+        messages.success(request, 'Le modèle a été enregistré avec succès.')
+        return redirect('home')  # Rediriger vers la page d'accueil ou une autre vue après l'enregistrement du modèle
+
+    # Pré-remplir les champs du formulaire avec les informations passées depuis la vue feature_selection_results
+    dataset_id = request.GET.get('dataset')
+    model_name = request.GET.get('model_name', 'Unknown Model')
+    action = request.GET.get('action')
+    selected_columns_id = request.GET.getlist('selected_columns')  # Récupérer les IDs des colonnes sélectionnées
+    datasets = Dataset.objects.all()
+
+    # Si l'action est feature_selection, récupérer les colonnes correspondantes
+    if action == 'feature_selection':
+        selected_columns = Column.objects.filter(id__in=selected_columns_id)
     else:
-        return redirect(reverse('feature_selection'))
+        selected_columns = []
+
+    context = {
+        'datasets': datasets,
+        'model_name': model_name,
+        'dataset_id': dataset_id,
+        'selected_columns': selected_columns,
+    }
+
+    return render(request, 'create_model_algo.html', context)
+
+
+def create_model_algo(request):
+    if request.method == 'POST':
+        model_name = request.POST.get('model_name')
+        dataset_id = request.POST.get('dataset')
+        algorithm = request.POST.get('algorithm')
+        selected_columns = request.POST.getlist('columns')
+
+        # Enregistrer le modèle
+        model = Model.objects.create(name=model_name, algorithm=algorithm, dataset_id=dataset_id)
+
+        # Enregistrer les colonnes sélectionnées pour ce modèle avec le statut "input"
+        for column_id in selected_columns:
+            column = Column.objects.get(id=column_id)
+            column.status = 'input'
+            column.save()
+            model.columns.add(column)
+
+        messages.success(request, 'Le modèle a été enregistré avec succès.')
+        return redirect('home')  # Rediriger vers la page d'accueil ou une autre vue après l'enregistrement du modèle
+
+    # Pré-remplir les champs du formulaire avec les informations passées depuis la vue feature_selection_results
+    dataset_id = request.GET.get('dataset')
+    model_name = request.GET.get('model_name', 'Unknown Model')
+    action = request.GET.get('action')
+    selected_columns_id = request.GET.getlist('selected_columns')  # Récupérer les IDs des colonnes sélectionnées
+    datasets = Dataset.objects.all()
+
+    # Si l'action est feature_selection, récupérer les colonnes correspondantes
+    if action == 'feature_selection':
+        # Récupérer les noms des colonnes à partir des identifiants
+        selected_columns = Column.objects.filter(id__in=selected_columns_id).values_list('name', flat=True)
+    else:
+        selected_columns = []
+
+    context = {
+        'datasets': datasets,
+        'model_name': model_name,
+        'dataset_id': dataset_id,
+        'selected_columns': selected_columns,
+    }
+
+    return render(request, 'create_model_algo.html', context)
+"""
+
+def create_model_algo(request):
+    if request.method == 'POST':
+        model_name = request.POST.get('model_name')
+        dataset_id = request.POST.get('dataset')
+        algorithm = request.POST.get('algorithm')
+        selected_columns = request.POST.getlist('selected_columns')  # Obtenez les noms des colonnes, pas leurs ID
+
+        # Enregistrer le modèle
+        model = Model.objects.create(name=model_name, algorithm=algorithm, dataset_id=dataset_id)
+
+        # Enregistrer les colonnes sélectionnées pour ce modèle avec le statut "input"
+        for column_name in selected_columns:  # Utilisez column_name au lieu de column_id
+            column = Column.objects.get(name=column_name)  # Recherchez la colonne par son nom
+            column.status = 'input'
+            column.save()
+            model.columns.add(column)
+
+        messages.success(request, 'Le modèle a été enregistré avec succès.')
+        return redirect('home')  # Rediriger vers la page d'accueil ou une autre vue après l'enregistrement du modèle
+
+    # Pré-remplir les champs du formulaire avec les informations passées depuis la vue feature_selection_results
+    dataset_id = request.GET.get('dataset')
+    model_name = request.GET.get('model_name', 'Unknown Model')
+    action = request.GET.get('action')
+    selected_columns = request.GET.getlist('selected_columns')  # Récupérer les noms des colonnes sélectionnées, pas leurs ID
+    datasets = Dataset.objects.all()
+
+    context = {
+        'datasets': datasets,
+        'model_name': model_name,
+        'dataset_id': dataset_id,
+        'selected_columns': selected_columns,
+    }
+
+    return render(request, 'create_model_algo.html', context)
 
 
 @csrf_exempt

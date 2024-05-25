@@ -7,6 +7,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='home'),
     path('create_model/', views.save_model, name='create_model'),
+    path('create_model_algo/', views.create_model_algo, name='create_model_algo'),
     path('get_columns/<int:dataset_id>/', views.get_columns, name='get_columns'),
     path('list_models/', views.list_models, name='list_models'),
     path('model/<int:model_id>/', views.model_details, name='model_details'),
@@ -18,7 +19,6 @@ urlpatterns = [
     path('upload/success/', views.upload_success, name='upload_success'),
     path('feature_selection/', views.feature_selection, name='feature_selection'),
     path('feature_selection_results/', views.feature_selection_results, name='feature_selection_results'),
-
 
 ]
 

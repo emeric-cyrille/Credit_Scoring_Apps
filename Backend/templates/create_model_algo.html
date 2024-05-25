@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Création de modèle</h2>
+
+    {% if alert_message %}
+    <div class="alert alert-{{ alert_type }}" role="alert">
+        {{ alert_message }}
+    </div>
+    {% endif %}
+
+    <form id="mainForm" method="post" action="{% url 'create_model_algo' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Champ pour le nom du modèle -->
+        <div class="form-group">
+            <label for="model_name">Nom du modèle :</label>
+            <input type="text" class="form-control" id="model_name" name="model_name" value="{{ model_name }}">
+        </div>
+
+
+        <!-- Choisir un dataset -->
+        <div class="form-group">
+            <label for="dataset">Choisir un dataset :</label>
+            <select class="form-control" id="dataset" name="dataset">
+                {% for dataset in datasets %}
+                    <option value="{{ dataset.id }}" {% if dataset.id == dataset_id %}selected{% endif %}>{{ dataset.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+
+
+        <div class="form-group">
+            <label>Colonnes sélectionnées :</label>
+            <div id="columns">
+                {% for column in selected_columns %}
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="column_{{ column.id }}" name="columns" value="{{ column.id }}" checked readonly>
+                    <label class="form-check-label" for="column_{{ column.id }}">{{ column.name }}</label>
+                    <span>{{ column }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+        <!-- Choisir un algorithme -->
+        <div class="form-group">
+            <label for="algorithm">Choisir un algorithme :</label>
+            <select class="form-control" id="algorithm" name="algorithm">
+                <option value="logistic_regression">Régression logistique</option>
+                <option value="random_forest">Random Forest</option>
+                <option value="decision_tree">Arbre de décision</option>
+            </select>
+        </div>
+
+        <!-- Bouton pour enregistrer le modèle -->
+        <button type="submit" class="btn btn-primary">Enregistrer le modèle</button>
+    </form>
+</div>
+
+<script>
+
+    // Charger les données à partir de localStorage si elles existent
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('model_name')) {
+            document.getElementById('model_name').value = localStorage.getItem('model_name');
+        }
+        if (localStorage.getItem('dataset')) {
+            document.getElementById('dataset').value = localStorage.getItem('dataset');
+        }
+        if (localStorage.getItem('algorithm')) {
+            document.getElementById('algorithm').value = localStorage.getItem('algorithm');
+        }
+    });
+</script>
+
+{% endblock %}

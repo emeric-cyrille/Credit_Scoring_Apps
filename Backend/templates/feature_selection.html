@@ -17,8 +17,8 @@
         <div class="form-group">
             <label for="dataset">Choisir un dataset :</label>
             <select class="form-control" id="dataset" name="dataset">
-                {% for dataset in datasets %}
-                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                {% for dataset in datasets_info %}
+                    <option value="{{ dataset.id }}" data-max-features="{{ dataset.num_columns }}">{{ dataset.name }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -40,6 +40,12 @@
             <input type="number" class="form-control" id="k" name="k" value="10">
         </div>
 
+        <!-- Nombre de caractéristiques à afficher -->
+        <div class="form-group">
+            <label for="num_features">Nombre d'attributs à afficher :</label>
+            <input type="number" class="form-control" id="num_features" name="num_features" value="10" min="1">
+        </div>
+
         <!-- Bouton pour soumettre le formulaire -->
         <button type="submit" class="btn btn-primary">Lancer l'algorithme</button>
 
@@ -49,30 +55,52 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('dataset')) {
-            document.getElementById('dataset').value = localStorage.getItem('dataset');
+        const datasetSelect = document.getElementById('dataset');
+        const algorithmSelect = document.getElementById('algorithm');
+        const kInput = document.getElementById('k');
+        const numFeaturesInput = document.getElementById('num_features');
+
+        // Définir la valeur par défaut de numFeatures en fonction du dataset sélectionné
+        function setDefaultNumFeatures() {
+            const selectedOption = datasetSelect.selectedOptions[0];
+            if (selectedOption) {
+                const maxFeatures = selectedOption.getAttribute('data-max-features');
+                numFeaturesInput.value = maxFeatures;
+                numFeaturesInput.max = maxFeatures;
+            }
         }
+
+        // Appeler cette fonction lorsque le dataset change
+        datasetSelect.addEventListener('change', function() {
+            localStorage.setItem('dataset', this.value);
+            setDefaultNumFeatures();
+        });
+
+        if (localStorage.getItem('dataset')) {
+            datasetSelect.value = localStorage.getItem('dataset');
+            setDefaultNumFeatures();
+        }
+
         if (localStorage.getItem('algorithm')) {
-            document.getElementById('algorithm').value = localStorage.getItem('algorithm');
+            algorithmSelect.value = localStorage.getItem('algorithm');
             toggleKField(localStorage.getItem('algorithm'));
         }
 
-        document.getElementById('dataset').addEventListener('change', function() {
-            localStorage.setItem('dataset', this.value);
-        });
-        document.getElementById('algorithm').addEventListener('change', function() {
+        algorithmSelect.addEventListener('change', function() {
             localStorage.setItem('algorithm', this.value);
             toggleKField(this.value);
         });
 
         function toggleKField(algorithm) {
-            var kDiv = document.getElementById('k_div');
+            const kDiv = document.getElementById('k_div');
             if (algorithm === 'sfs' || algorithm === 'lasso') {
                 kDiv.style.display = 'block';
             } else {
                 kDiv.style.display = 'none';
             }
         }
+
+        setDefaultNumFeatures(); // Définir la valeur par défaut lors du chargement de la page
     });
 </script>
 {% endblock %}
